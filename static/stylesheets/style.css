@@ -8,6 +8,14 @@ body.error-404 {
   background-color: #1da1f2;
 }
 
+div.full-width {
+  overflow: hidden;
+}
+img.img-fluid {
+  
+  object-fit: cover;
+}
+
 .form-control {
   margin-bottom: 20px;
 }
