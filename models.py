@@ -138,6 +138,7 @@ class User(db.Model):
         found_user_list = [user for user in self.following if user == other_user]
         return len(found_user_list) == 1
 
+    
     @classmethod
     def signup(cls, username, email, password, image_url):
         """Sign up user.
@@ -158,6 +159,8 @@ class User(db.Model):
 
         db.session.add(user)
         return user
+    
+
 
     @classmethod
     def authenticate(cls, username, password):

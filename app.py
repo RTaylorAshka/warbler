@@ -69,6 +69,9 @@ def signup():
     form = UserAddForm()
 
     if form.validate_on_submit():
+
+        
+
         try:
             user = User.signup(
                 username=form.username.data,
@@ -78,8 +81,10 @@ def signup():
             )
             db.session.commit()
 
-        except IntegrityError:
-            flash("Username already taken", 'danger')
+        except:
+            
+            flash('Username or Email is not available to use.', 'danger')
+
             return render_template('users/signup.html', form=form)
 
         do_login(user)
@@ -212,6 +217,28 @@ def stop_following(follow_id):
 
     return redirect(f"/users/{g.user.id}/following")
 
+@app.route('/users/add_like/<int:message_id>', methods=['POST'])
+def like_message(message_id):
+    """Toggles likes for messages"""
+
+    message = Message.query.get_or_404(message_id)
+    if message.user != g.user:
+        if message not in g.user.likes:
+            g.user.likes.append(message)
+            db.session.commit()
+        else:
+        
+            g.user.likes.remove(message)
+            db.session.commit()
+
+    return redirect('/')
+
+@app.route('/users/<int:user_id>/likes')
+def get_likes(user_id):
+    """Display all messages user has liked"""
+
+    user = User.query.get_or_404(user_id)
+    return render_template('users/likes.html', user = user)
 
 @app.route('/users/profile', methods=["GET", "POST"])
 def profile():
@@ -219,12 +246,30 @@ def profile():
     user = User.query.get(session[CURR_USER_KEY])
     form = UserEditForm(obj = user)
 
+    
     if form.validate_on_submit():
-
+        
         if User.authenticate(user.username, form.password.data):
-            form.populate_obj(user)
-            db.session.commit()
-            return redirect(f'/users/{user.id}')
+
+             
+            try:
+
+                user.username = form.username.data
+                user.email = form.email.data
+                user.image_url = form.image_url.data
+                user.header_image_url = form.header_image_url.data
+                user.bio = form.bio.data
+                user.location = form.location.data
+
+                db.session.commit()
+                return redirect(f'/users/{user.id}')
+            except:
+
+                
+                flash('Username or Email is not available to use.', 'danger')
+
+                return redirect('/users/profile')
+                
         
         else:
             flash('password incorrect', 'danger')
@@ -313,8 +358,11 @@ def homepage():
     """
 
     if g.user:
+
+        follow_ids = [u.id for u in g.user.following] + [g.user.id]
         messages = (Message
                     .query
+                    .filter(Message.user_id.in_(follow_ids))
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
@@ -341,3 +389,7 @@ def add_header(req):
     req.headers["Expires"] = "0"
     req.headers['Cache-Control'] = 'public, max-age=0'
     return req
+
+
+
+        
