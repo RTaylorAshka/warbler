@@ -54,6 +54,10 @@ class User(db.Model):
 
     __tablename__ = 'users'
 
+    def __repr__(self):
+        
+        return( f'User(id: {self.id}, email: {self.email}, username: {self.username})')
+
     id = db.Column(
         db.Integer,
         primary_key=True,
@@ -94,21 +98,9 @@ class User(db.Model):
         nullable=False,
     )
 
-    messages = db.relationship('Message', backref = 'user')
+    messages = db.relationship('Message', backref = 'user', cascade="all, delete-orphan")
 
-    # followers = db.relationship(
-    #     "User",
-    #     secondary="follows",
-    #     primaryjoin=(Follows.user_being_followed_id == id),
-    #     secondaryjoin=(Follows.user_following_id == id)
-    # )
-
-    # following = db.relationship(
-    #     "User",
-    #     secondary="follows",
-    #     primaryjoin=(Follows.user_following_id == id),
-    #     secondaryjoin=(Follows.user_being_followed_id == id)
-    # )
+   
 
     followers = db.relationship(
         'User', 
@@ -156,8 +148,9 @@ class User(db.Model):
             password=hashed,
             image_url=image_url,
         )
-
+        
         db.session.add(user)
+
         return user
     
 
@@ -172,7 +165,7 @@ class User(db.Model):
 
         If can't find matching user (or if password is wrong), returns False.
         """
-
+        
         user = cls.query.filter_by(username=username).first()
 
         if user:

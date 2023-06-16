@@ -65,7 +65,7 @@ def signup():
     If the there already is a user with that username: flash message
     and re-present form.
     """
-
+    
     form = UserAddForm()
 
     if form.validate_on_submit():
@@ -83,8 +83,9 @@ def signup():
 
         except:
             
+            db.session.rollback()
             flash('Username or Email is not available to use.', 'danger')
-
+           
             return render_template('users/signup.html', form=form)
 
         do_login(user)
@@ -265,6 +266,7 @@ def profile():
                 return redirect(f'/users/{user.id}')
             except:
 
+                db.session.rollback()
                 
                 flash('Username or Email is not available to use.', 'danger')
 

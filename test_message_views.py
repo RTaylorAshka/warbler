@@ -52,7 +52,7 @@ class MessageViewTestCase(TestCase):
         db.session.commit()
 
     def test_add_message(self):
-        """Can use add a message?"""
+        """Can user add a message?"""
 
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
@@ -71,3 +71,67 @@ class MessageViewTestCase(TestCase):
 
             msg = Message.query.one()
             self.assertEqual(msg.text, "Hello")
+
+        
+    def test_add_message_no_user(self):
+        """Can user add a message when not logged in?"""
+        with self.client as c:
+
+            resp = c.post("/messages/new", data={"text": "Hello"})
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(len(Message.query.all()), 0)
+
+
+    def test_delete_message(self):
+        """Can user delete a message?"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            c.post("/messages/new", data={"text": "Hello"})
+            msg = Message.query.one()
+            self.assertEqual(len(Message.query.all()), 1)
+
+            resp = c.post(f"/messages/{msg.id}/delete")
+            
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(len(Message.query.all()), 0)
+
+            
+
+    def test_delete_message_no_user(self):
+        """Can user delete a message when not logged in?"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            c.post("/messages/new", data={"text": "Hello"})
+            msg = Message.query.one()
+            self.assertEqual(len(Message.query.all()), 1)
+            c.get("/logout")
+
+            resp = c.post(f"/messages/{msg.id}/delete")
+
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(len(Message.query.all()), 1)
+
+
+    def test_get_message(self):
+        """Can user view a message?"""
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+                
+            c.post("/messages/new", data={"text": "Hello"})
+            msg = Message.query.one()
+            c.get("/")
+            resp = c.get(f"/messages/{msg.id}")
+            html = resp.get_data(as_text = True)
+
+            self.assertIn("Hello", html)
+
+ 
+            
+
+    
